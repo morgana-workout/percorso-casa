@@ -334,6 +334,7 @@ function playerShell() {
 }
 const vidItem = (slot, o = {}) => ({ type: 'video', slot, ...o });
 const timerItem = (label, sec, o = {}) => ({ type: 'timer', label, sec, ...o });
+const NOPAUSE = ['Mobilità', 'Defaticamento']; // niente recuperi in mobilità e defaticamento
 function buildQueue(day) {
   const s = D.sessions[day.sid], q = [], seenNow = new Set(S.seen), fis = (f) => S.videos[f + '|Video fisso'];
   day.fis.filter((f) => f !== 'FIS-08').forEach((f) => q.push(vidItem(f + '|Video fisso', { title: fis(f)?.nome || f, fb: fis(f)?.nome || '' })));
@@ -343,14 +344,14 @@ function buildQueue(day) {
       last = e.f; q.push({ type: 'phase', title: e.f });
       if (e.f === 'Defaticamento' && day.fis.includes('FIS-08')) q.push(vidItem('FIS-08|Video fisso', { title: fis('FIS-08')?.nome || 'Perché finiamo con l’allungamento' }));
     }
-    const n = e.s[day.wb - 1], info = D.ex[e.c] || {};
+    const n = e.s[day.wb - 1], info = D.ex[e.c] || {}, noPause = NOPAUSE.includes(e.f);
     for (let k = 1; k <= n; k++) {
       const sub = n > 1 ? `Serie ${k} di ${n}` : '';
       if (k === 1 && !seenNow.has(e.c)) { q.push(vidItem(e.c + '|Spiegazione', { title: e.n, sub: 'Spiegazione', fb: (info.txt || []).join(' '), fbSec: 22, mark: e.c })); seenNow.add(e.c); }
       q.push(vidItem(e.c + '|Seguimi', { title: e.n, sub: sub || 'Seguimi', fb: info.seg || '', fbSec: e.seg }));
-      if (k < n) q.push(timerItem('Recupero', 30, { title: e.n, sub, next: e.n }));
+      if (k < n && !noPause) q.push(timerItem('Recupero', day.b === 1 ? 15 : 30, { title: e.n, sub, next: e.n }));
     }
-    if (i < s.ex.length - 1) q.push(timerItem('Cambio esercizio', 15, { title: 'Bravissima', sub: '', next: s.ex[i + 1].n }));
+    if (i < s.ex.length - 1 && !NOPAUSE.includes(s.ex[i + 1].f)) q.push(timerItem('Cambio esercizio', 15, { title: 'Bravissima', sub: '', next: s.ex[i + 1].n }));
   });
   return q;
 }
