@@ -1,7 +1,7 @@
 :root{--bg:#EEF2F7;--card:#fff;--ink:#0B1626;--mute:#5A6B80;--line:#D6DFEA;--blue:#2F5D8C;--azure:#3DA5F4;--soft:#E3EEF9;--warn:#B3261E}
 @media (prefers-color-scheme:dark){:root{--bg:#0A121D;--card:#121E2E;--ink:#EAF1F8;--mute:#92A5BA;--line:#25364B;--blue:#7FB1E6;--azure:#4DB0FF;--soft:#183049;--warn:#FF8A80}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.45}
+html,body{overflow-x:hidden;max-width:100%;margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.45}
 h1,h2,h3{font-family:'Bricolage Grotesque','Trebuchet MS',sans-serif;line-height:1.1;margin:0}
 button,input,select,textarea{font:inherit;color:inherit}
 .shell{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
@@ -66,3 +66,25 @@ input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--lin
 @media (orientation:portrait){.rot.on{display:block}}
 
 #start{position:sticky;bottom:calc(64px + env(safe-area-inset-bottom))}
+
+/* correzioni: niente riquadri che sbordano, barra in basso sempre cliccabile su Safari */
+*{min-width:0}
+.card,.row,.chips,.modal>div{max-width:100%}
+.row{flex-wrap:wrap}
+.row .n{overflow-wrap:anywhere;flex:1 1 120px}
+.card{overflow-wrap:anywhere}
+.week{gap:5px}
+.week b{width:44px;flex:none}
+.day{min-width:0;width:auto;max-width:44px}
+input[type=date]{max-width:100%;min-width:0}
+.tabs{position:sticky;bottom:0;left:auto;right:auto;margin-top:auto}
+.tabs button{min-height:48px}
+.app-wrap{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.app-wrap .shell{flex:1;min-height:0}
+.page{padding-bottom:24px}
+#start{bottom:12px}
+/* layout a schermo intero: la barra in basso resta sempre sopra la barra di Safari */
+.app-wrap{height:100vh;height:100dvh;overflow:hidden}
+.app-wrap .shell{overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;max-width:none;width:100%;padding-top:env(safe-area-inset-top)}
+.app-wrap .page{max-width:560px;margin:0 auto;width:100%}
+.tabs{position:static;flex:none}

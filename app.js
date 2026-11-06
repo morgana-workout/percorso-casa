@@ -73,8 +73,8 @@ function render() {
   const adm = S.prof.is_admin;
   const tabs = [['oggi', 'sun', 'Oggi'], ['cal', 'cal', 'Calendario'], ['lez', 'cam', 'Lezione']];
   if (adm) tabs.push(['video', 'up', 'Video'], ['clienti', 'users', 'Clienti']);
-  app.innerHTML = `<div class="shell"><div class="page" id="page"></div></div>
-  <nav class="tabs"><div>${tabs.map((t) => `<button data-t="${t[0]}" class="${S.tab === t[0] ? 'on' : ''}">${ic(t[1])}${t[2]}</button>`).join('')}</div></nav>`;
+  app.innerHTML = `<div class="app-wrap"><div class="shell"><div class="page" id="page"></div></div>
+  <nav class="tabs"><div>${tabs.map((t) => `<button data-t="${t[0]}" class="${S.tab === t[0] ? 'on' : ''}">${ic(t[1])}${t[2]}</button>`).join('')}</div></nav></div>`;
   app.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { S.tab = b.dataset.t; render(); }));
   ({ oggi: viewOggi, cal: viewCal, lez: viewLez, video: viewVideo, clienti: viewClienti }[S.tab])($('#page'));
 }
