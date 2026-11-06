@@ -347,7 +347,6 @@ function buildQueue(day) {
     for (let k = 1; k <= n; k++) {
       const sub = n > 1 ? `Serie ${k} di ${n}` : '';
       if (k === 1 && !seenNow.has(e.c)) { q.push(vidItem(e.c + '|Spiegazione', { title: e.n, sub: 'Spiegazione', fb: (info.txt || []).join(' '), fbSec: 22, mark: e.c })); seenNow.add(e.c); }
-      q.push(timerItem('Preparati', 10, { title: e.n, sub }));
       q.push(vidItem(e.c + '|Seguimi', { title: e.n, sub: sub || 'Seguimi', fb: info.seg || '', fbSec: e.seg }));
       if (k < n) q.push(timerItem('Recupero', 30, { title: e.n, sub, next: e.n }));
     }
