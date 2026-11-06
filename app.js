@@ -218,18 +218,57 @@ function viewVideo(el) {
   gname[1] = 'Giornata 1 · A terra, pancia in su';
   let h = `<div><div class="eyebrow">Solo per te</div><h1 style="font-size:28px;margin-top:4px">Carica video</h1></div>
   <div class="card"><b>${n} di ${vs.length} caricati</b><div class="prog"><i style="width:${(n / vs.length) * 100}%"></i></div>
+  <label class="btn big" style="margin-top:10px;cursor:pointer">${ic('up')} Carica più video insieme<input type="file" accept="video/*" multiple id="bulk" hidden></label>
+  <p class="muted" style="font-size:12px;margin:6px 0 0">Scegli i video dal rullino nell’ordine in cui li hai registrati: li abbino io ai posti vuoti, in ordine di ripresa, e tu controlli prima di confermare.</p>
   <p class="muted" style="font-size:12px;margin:6px 0 0">Ogni file deve stare sotto i 50 MB. Registra in 720p HD, formato «Più compatibile». Il caricamento sostituisce il video già presente.</p></div>`;
   let last = null;
   vs.forEach((v) => {
     if (v.giornata !== last) { h += `<div class="phase" style="margin-bottom:-6px">${esc(gname[v.giornata] || 'Giornata ' + v.giornata)}</div>`; last = v.giornata; }
     h += `<div class="card" style="padding:10px 12px"><div class="row" style="border:0;padding:0"><span class="st ${v.path ? 'ok' : 'no'}">${v.path ? ic('ok', 'width:13px;height:13px') : ''}</span>
-    <span class="n"><b>${esc(v.codice)}</b> · ${esc(v.clip)}<br><em>${esc(v.nome)}${v.path ? ' · ' + (v.size_bytes / 1048576).toFixed(1) + ' MB' : ' · mancante'}</em></span>
+    <span class="n"><span class="muted">${v.ordine}.</span> <b>${esc(v.codice)}</b> · ${esc(v.clip)}<br><em>${esc(v.nome)}${v.path ? ' · ' + (v.size_bytes / 1048576).toFixed(1) + ' MB' : ' · mancante'}</em></span>
     ${v.path ? `<button class="btn s" data-pv="${esc(v.slot)}">Anteprima</button>` : ''}
     <label class="btn s ${v.path ? '' : 'f'}" style="margin:0;cursor:pointer">${v.path ? 'Sostituisci' : 'Carica'}<input type="file" accept="video/*" data-up="${esc(v.slot)}" hidden></label></div></div>`;
   });
   el.innerHTML = h;
+  $('#bulk').onchange = (e) => e.target.files.length && bulkStart([...e.target.files], el);
   el.querySelectorAll('[data-pv]').forEach((b) => (b.onclick = () => playSingle(b.dataset.pv)));
   el.querySelectorAll('[data-up]').forEach((i) => (i.onchange = () => i.files[0] && uploadVideo(i.dataset.up, i.files[0], i)));
+}
+async function uploadCore(slot, file) {
+  const ext = ((file.name.split('.').pop() || 'mp4').toLowerCase()).replace(/[^a-z0-9]/g, '') || 'mp4';
+  const path = slot.replace('|', '_').replace(/\s+/g, '-') + '.' + ext;
+  const prev = S.videos[slot]?.path;
+  const up = await sb.storage.from('video').upload(path, file, { upsert: true, contentType: file.type || 'video/mp4' });
+  if (up.error) return up.error.message;
+  if (prev && prev !== path) await sb.storage.from('video').remove([prev]);
+  const { error } = await sb.from('pc_videos').update({ path, size_bytes: file.size, aggiornato_il: new Date().toISOString() }).eq('slot', slot);
+  if (error) return 'salvataggio non riuscito';
+  S.videos[slot] = { ...S.videos[slot], path, size_bytes: file.size }; delete urlCache[slot];
+  return null;
+}
+function bulkStart(files, el) {
+  let fs = files.slice(); if (new Set(fs.map((f) => f.lastModified)).size === fs.length) fs.sort((a, b) => a.lastModified - b.lastModified);
+  const all = Object.values(S.videos).sort((a, b) => a.ordine - b.ordine), miss = all.filter((v) => !v.path);
+  const opts = (sel) => all.map((v) => `<option value="${esc(v.slot)}" ${v.slot === sel ? 'selected' : ''}>${v.ordine}. ${esc(v.codice)} · ${esc(v.clip)}${v.path ? ' (già caricato)' : ''}</option>`).join('');
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div><h2>Controlla l’abbinamento</h2><p class="muted" style="margin:4px 0 8px">Se un video è nel posto sbagliato, cambialo dal menu. «Anteprima» ti fa rivedere il file.</p>
+  ${fs.map((f, i) => `<div class="row" style="align-items:flex-start;flex-direction:column;gap:4px"><span style="font-size:12px" class="muted">${esc(f.name)} · ${(f.size / 1048576).toFixed(1)} MB${f.size > 52428800 ? ' · TROPPO PESANTE, sarà saltato' : ''}</span>
+  <span style="display:flex;gap:6px;width:100%"><select data-i="${i}" style="flex:1">${opts(miss[i]?.slot)}</select><button class="btn s" data-pr="${i}">Anteprima</button></span></div>`).join('')}
+  <p id="bst" class="muted"></p><p style="display:flex;gap:8px"><button class="btn f" id="bgo">Carica tutti</button><button class="btn" id="bno">Annulla</button></p></div>`;
+  document.body.appendChild(m);
+  m.querySelectorAll('[data-pr]').forEach((b) => (b.onclick = () => { const u = URL.createObjectURL(fs[+b.dataset.pr]); const w = document.createElement('div'); w.className = 'modal'; w.style.zIndex = 45; w.innerHTML = `<div><video src="${u}" controls autoplay playsinline style="width:100%;border-radius:12px;background:#000"></video><p><button class="btn" id="x">Chiudi</button></p></div>`; document.body.appendChild(w); w.onclick = (e) => { if (e.target === w || e.target.id === 'x') { w.remove(); URL.revokeObjectURL(u); } }; }));
+  $('#bno', m).onclick = () => m.remove();
+  $('#bgo', m).onclick = async () => {
+    const sel = [...m.querySelectorAll('select')].map((s) => s.value);
+    if (new Set(sel).size !== sel.length) return ($('#bst', m).textContent = 'Due video sono sullo stesso posto: cambia uno dei due.');
+    $('#bgo', m).disabled = true; let ok = 0, bad = [];
+    for (let i = 0; i < fs.length; i++) {
+      $('#bst', m).textContent = `Carico ${i + 1} di ${fs.length}… non chiudere la pagina.`;
+      if (fs[i].size > 52428800) { bad.push(fs[i].name + ' (troppo pesante)'); continue; }
+      const err = await uploadCore(sel[i], fs[i]); err ? bad.push(fs[i].name + ' (' + err + ')') : ok++;
+    }
+    m.remove(); toast(bad.length ? `Caricati ${ok}. Non riusciti: ${bad.join(', ')}` : `Caricati ${ok} video ✨`); render();
+  };
 }
 async function uploadVideo(slot, file, input) {
   const mb = file.size / 1048576;
