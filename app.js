@@ -217,7 +217,7 @@ function viewVideo(el) {
   const gname = { 1: 'Giornata 1 · In piedi e sdraiata', 2: 'Giornata 2 · Pancia in giù, fianco, quattro zampe', 3: 'Giornata 3 · Seduta e libero', 4: 'Giornata 4 · Al muro', 5: 'Giornata 5 · Video fissi' };
   gname[1] = 'Giornata 1 · A terra, pancia in su';
   let h = `<div><div class="eyebrow">Solo per te</div><h1 style="font-size:28px;margin-top:4px">Carica video</h1></div>
-  <div class="card"><b>${n} di ${vs.length} caricati</b><div class="prog"><i style="width:${(n / vs.length) * 100}%"></i></div>
+  <div class="card"><b>${n} di ${vs.length} caricati</b> <span class="muted">· spazio usato: ${(vs.reduce((t, v) => t + (v.size_bytes || 0), 0) / 1048576).toFixed(0)} MB su circa 1000</span><div class="prog"><i style="width:${(n / vs.length) * 100}%"></i></div>
   <label class="btn big" style="margin-top:10px;cursor:pointer">${ic('up')} Carica più video insieme<input type="file" accept="video/*" multiple id="bulk" hidden></label>
   <p class="muted" style="font-size:12px;margin:6px 0 0">Scegli i video dal rullino nell’ordine in cui li hai registrati: li abbino io ai posti vuoti, in ordine di ripresa, e tu controlli prima di confermare.</p>
   <p class="muted" style="font-size:12px;margin:6px 0 0">Ogni file deve stare sotto i 50 MB. Registra in 720p HD, formato «Più compatibile». Il caricamento sostituisce il video già presente.</p></div>`;
